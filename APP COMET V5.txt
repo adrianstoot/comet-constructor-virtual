@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>COMETV | Constructor Metálico (Tekla Style)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           ESTÉTICA CAD PRO (FLAT & SQUARED)
+           ========================================= */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            /* DARK THEME (ANTRACITA TÉCNICO) */
+            --bg-global: #1e1e21;
+            --bg-panel: #262629;
+            --bg-ribbon: #2d2d30;
+            --bg-input: #3a3a3d;
+            --border: #454548;
+            --accent: #0A84FF;
+            --accent-hover: #0071e3;
+            --text-main: #eeeeee;
+            --text-muted: #aaaaaa;
+            --btn-hover: #444448;
+            --canvas-grad-1: #202023;
+            --canvas-grad-2: #151518;
+            --shadow-panel: none; /* Sin sombras */
+            --section-bg: #2d2d30;
+            
+            /* Layout Vars */
+            --sidebar-width: 60px; 
+            --props-width: 360px;
+        }
+
+        body.light-theme {
+            /* LIGHT THEME (PAPEL TÉCNICO) */
+            --bg-global: #e0e0e0; 
+            --bg-panel: #ffffff;
+            --bg-ribbon: #f5f5f7;
+            --bg-input: #f2f2f2;
+            --border: #d1d1d6;
+            --accent: #007aff;          
+            --accent-hover: #005ecb;
+            --text-main: #1c1c1e;
+            --text-muted: #6e6e73;
+            --btn-hover: #e5e5ea;
+            --canvas-grad-1: #f2f2f7;
+            --canvas-grad-2: #e5e5ea;
+            --shadow-panel: none;
+            --section-bg: #ffffff;
+        }
+
+        body { 
+            margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-global); color: var(--text-main); 
+            user-select: none; font-size: 12px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        
+        /* UI Elements Defaults (RESET) */
+        * { border-radius: 0 !important; } /* FUERZA CUADRADOS PERFECTOS */
+        
+        .glass-panel { background: var(--bg-panel); border-right: 1px solid var(--border); }
+        
+        .bevel-btn {
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            transition: all 0.1s;
+        }
+        .bevel-btn:hover {
+            background: var(--btn-hover);
+        }
+
+        /* GRID LAYOUT */
+        #app {
+            display: grid;
+            grid-template-rows: 40px 100px 1fr;
+            grid-template-columns: var(--sidebar-width) 1fr var(--props-width);
+            width: 100vw; height: 100vh;
+            opacity: 0; transition: opacity 0.5s, grid-template-columns 0.3s;
+        }
+        #app.visible { opacity: 1; }
+        #app.props-hidden { --props-width: 0px; }
+
+        /* HEADER */
+        .top-header {
+            grid-column: 1 / -1; background: var(--bg-panel); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 60;
+        }
+        .app-branding { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
+        .app-branding i { color: var(--accent); font-size: 18px; }
+
+        /* RIBBON (MODIFICADO: Sin espacios, botones cuadrados) */
+        .ribbon-container {
+            grid-column: 1 / -1; background: var(--bg-ribbon); border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 50;
+        }
+        .ribbon-tabs { display: flex; height: 32px; background: rgba(0,0,0,0.02); padding-left: 0; border-bottom: 1px solid var(--border); }
+        .r-tab {
+            padding: 0 20px; height: 100%; display: flex; align-items: center;
+            font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+            border-right: 1px solid var(--border); transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px;
+            background: var(--bg-panel);
+        }
+        .r-tab:hover { color: var(--text-main); background: var(--btn-hover); }
+        .r-tab.active { background: var(--bg-ribbon); color: var(--accent); font-weight: 700; border-bottom: 2px solid var(--accent); }
+
+        .ribbon-content { flex: 1; display: flex; align-items: center; padding: 0; gap: 0; overflow-x: auto; overflow-y: hidden; }
+        .ribbon-group { display: none; height: 100%; align-items: center; gap: 0; width: 100%; }
+        .ribbon-group.active { display: flex; }
+
+        .r-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 70px; height: 100%; /* Altura completa */
+            cursor: pointer; color: var(--text-muted);
+            transition: 0.1s; border-right: 1px solid var(--border); gap: 6px; position: relative;
+            background: transparent;
+        }
+        .r-btn:hover { background: var(--btn-hover); color: var(--text-main); }
+        .r-btn.active { background: var(--bg-input); color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .r-btn i { font-size: 20px; } 
+        .r-btn span { font-size: 10px; font-weight: 500; text-align: center; line-height: 1; }
+        
+        .r-sep { width: 1px; height: 100%; background: var(--border); margin: 0; }
+
+        /* SIDEBAR (MODIFICADO: Sin espacios, botones cuadrados) */
+        .left-menu-panel {
+            grid-column: 1 / 2; grid-row: 3 / -1; background: var(--bg-panel);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; color: var(--text-main);
+            padding-top: 0; z-index: 40;
+            gap: 0; /* Sin espacio intermedio */
+        }
+        .menu-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 60px; /* Cuadrados (ancho sidebar es 60px) */
+            margin-bottom: 0; 
+            cursor: pointer; color: var(--text-muted); transition: 0.2s; position: relative;
+            border-bottom: 1px solid var(--border);
+        }
+        .menu-item:hover { background: var(--btn-hover); color: var(--text-main); }
+        .menu-item.active { background: var(--bg-input); color: var(--accent); border-left: 3px solid var(--accent); }
+        .menu-item i { font-size: 20px; }
+        
+        /* Tooltips sidebar */
+        .menu-item::after { 
+            content: attr(title); position: absolute; left: 60px; top: 0; bottom: 0;
+            background: var(--bg-ribbon); color: var(--text-main); padding: 0 12px;
+            display: flex; align-items: center;
+            border: 1px solid var(--border); border-left: none;
+            font-size: 11px; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.1s;
+            z-index: 100;
+        }
+        .menu-item:hover::after { opacity: 1; }
+
+        /* CANVAS */
+        .canvas-area {
+            grid-column: 2 / 3; grid-row: 3 / -1; position: relative;
+            background: radial-gradient(circle at center, var(--canvas-grad-1) 0%, var(--canvas-grad-2) 100%);
+            overflow: hidden;
+        }
+
+        /* PROPERTIES PANEL */
+        .right-props-panel {
+            grid-column: 3 / 4; grid-row: 3 / -1; background: var(--bg-panel);
+            border-left: 1px solid var(--border); display: flex; flex-direction: column;
+            overflow: hidden; z-index: 45;
+        }
+        .props-header {
+            height: 40px; background: var(--bg-ribbon); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--text-main); font-size: 11px; letter-spacing: 1px;
+        }
+        
+        .section-preview-container {
+            height: 220px; background: var(--section-bg); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; position: relative; padding: 10px; overflow: hidden;
+        }
+        .blueprint-grid {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 20px 20px; opacity: 0.15; pointer-events: none;
+        }
+        #section-canvas { width: 220px; height: 180px; z-index: 2; }
+        .obj-badge { 
+            position: absolute; bottom: 8px; right: 8px; background: var(--accent); color: white; 
+            padding: 3px 6px; font-family: 'JetBrains Mono'; font-size: 9px; font-weight: 700; z-index: 10;
+        }
+
+        /* Property Controls */
+        .prop-section { border-bottom: 1px solid var(--border); }
+        .prop-title {
+            padding: 12px 15px; background: var(--bg-panel); cursor: pointer; font-size: 10px; font-weight: 700;
+            display: flex; justify-content: space-between; color: var(--text-muted); transition: 0.2s;
+            border-left: 2px solid transparent; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .prop-title:hover { background: var(--bg-ribbon); color: var(--text-main); border-left-color: var(--accent); }
+        .prop-body { padding: 15px; background: var(--bg-panel); display: none; }
+        .prop-body.open { display: block; }
+
+        .p-row { margin-bottom: 10px; }
+        .p-label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; font-family: 'Inter'; }
+        .p-input, .p-select {
+            width: 100%; height: 30px; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main);
+            font-size: 12px; padding: 0 8px; outline: none; transition: 0.2s; font-family: 'JetBrains Mono', monospace;
+        }
+        .p-input:focus, .p-select:focus { border-color: var(--accent); }
+        .p-readonly { background: rgba(0,0,0,0.05); color: var(--text-muted); border-color: transparent; cursor: default; }
+        
+        .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+        .c-swatch { height: 24px; cursor: pointer; border: none; transition: opacity 0.1s; }
+        .c-swatch:hover { opacity: 0.8; z-index: 10; }
+
+        .toast { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            background: var(--bg-panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+            color: var(--text-main); padding: 8px 16px; font-size: 12px; font-weight: 600;
+            opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; 
+            display: flex; align-items: center; gap: 8px;
+        }
+        .toast.visible { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+        
+        .label-3d { 
+            position: absolute; background: rgba(0,0,0,0.85); color: white; padding: 2px 6px; font-size: 10px; 
+            pointer-events: none; transform: translate(-50%, -150%); white-space: nowrap; 
+            font-family: 'JetBrains Mono'; border: 1px solid #555; backdrop-filter: blur(2px);
+        }
+        .measure-label { 
+            position: absolute; background: #fff; color: #000; padding: 2px 6px; 
+            font-size: 11px; font-weight: 800; border: 1px solid #000; 
+            pointer-events: none; transform: translate(-50%, -50%); z-index: 10; 
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        #home-screen { position: absolute; top:0; left:0; width:100%; height:100%; background: #161618; z-index: 2000; display:flex; color:white; }
+        #home-screen.hidden-screen { transform: translateY(-100%); pointer-events: none; transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        /* Updated Home Screen Styles - Professional Hero Image */
+        .home-sidebar { 
+            width: 320px; background: #1e1e21; border-right: 1px solid #333; padding: 40px; 
+            display:flex; flex-direction:column; z-index: 2; /* Sit above image */
+        }
+        .recent-projects { 
+            flex:1; padding: 60px; 
+            /* Architectural Background Image */
+            background-image: 
+                linear-gradient(to right, rgba(30,30,33,1) 0%, rgba(30,30,33,0.85) 15%, rgba(30,30,33,0.4) 100%),
+                url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        .project-card { 
+            background: rgba(43, 43, 46, 0.9); /* Slight transparency */
+            border: 1px solid #454548; padding: 20px; 
+            margin-bottom: 0; border-bottom: none; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition: 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        .project-card:last-child { border-bottom: 1px solid #454548; }
+        .project-card:hover { background: rgba(54, 54, 57, 0.95); border-left: 2px solid var(--accent); }
+
+        .theme-toggle {
+            cursor: pointer; padding: 4px 10px; background: var(--bg-input); 
+            color: var(--text-main); font-size: 11px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border); transition: 0.2s;
+        }
+        .theme-toggle:hover { background: var(--border); }
+
+        /* Estilo del Slider de Zoom */
+        #zoom-control-panel {
+            position: absolute; bottom: 20px; right: 20px;
+            background: var(--bg-panel);
+            padding: 8px 15px;
+            display: flex; align-items: center; gap: 10px;
+            border: 1px solid var(--border);
+            z-index: 999;
+        }
+        #zoom-slider { -webkit-appearance: none; height: 2px; background: #555; outline: none; }
+        #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--accent); cursor: pointer; border-radius: 0; }
+    </style>
+    
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body class="">
+
+<!-- DASHBOARD -->
+<div id="home-screen">
+    <!-- Removed canvas element -->
+    <div class="home-sidebar">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 40px;">
+            <div style="background:var(--accent); width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-size: 24px;"><i class="fas fa-cubes text-white"></i></div>
+            <div>
+                <div style="font-weight: 800; font-size: 22px; color: white; line-height:1.1;">COMETV</div>
+                <div style="font-size: 11px; color: #888; letter-spacing:1px; font-weight:500;">EDUCATION EDITION</div>
+            </div>
+        </div>
+        <button class="p-input bevel-btn" style="height:44px; background: var(--accent); color:white; border:none; margin-bottom: 0; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px;" onclick="app.startNewProject()"><i class="fas fa-plus-circle mr-2"></i> <span data-i18n="new_project">NUEVO PROYECTO</span></button>
+        <button class="p-input bevel-btn" style="height:44px; background: transparent; color:#ccc; border:1px solid #444; border-top: none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px;" onclick="document.getElementById('file-input').click()"><i class="fas fa-folder-open mr-2"></i> <span data-i18n="open_file">ABRIR ARCHIVO</span></button>
+        <div style="margin-top:auto; font-size:10px; color:#555;">v5.7.0 Ultimate<br>Three.js r160</div>
+    </div>
+    <div class="recent-projects">
+        <h2 style="font-size: 28px; font-weight:300; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:20px; margin-bottom:0; letter-spacing:-0.5px; color:white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);" data-i18n="projects_panel">Panel de Proyectos</h2>
+        <div id="projects-list"></div>
+        <div id="empty-state" style="text-align:center; color:#444; margin-top:100px;">
+            <div style="background:rgba(43, 43, 46, 0.8); backdrop-filter: blur(4px); width:80px; height:80px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto;"><i class="far fa-folder-open" style="font-size:32px; opacity:0.8; color:white;"></i></div>
+            <p style="font-size:16px; color:#ccc; text-shadow: 0 1px 2px rgba(0,0,0,0.8);" data-i18n="no_projects">No hay proyectos recientes</p>
+        </div>
+    </div>
+</div>
+
+<!-- APP UI -->
+<div id="app">
+    <header class="top-header">
+        <div class="app-branding"><i class="fas fa-cubes"></i> COMETV <span style="font-weight:400; color:var(--text-muted); font-size:12px; padding-left:5px; border-left:1px solid var(--border); margin-left:5px;">Ultimate</span></div>
+        <div id="project-name-display" style="font-family:'JetBrains Mono'; font-size:12px; color:var(--text-muted);">Sin Título.rvt</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div class="theme-toggle" onclick="ui.toggleTheme()" title="Cambiar Modo Día/Noche">
+                <i class="fas fa-sun" id="theme-icon"></i> <span id="theme-text" data-i18n="day_mode">Modo Día</span>
+            </div>
+            <button class="p-input bevel-btn" style="width:auto; height:28px; background:var(--accent); border:none; color:white; font-weight:600;" onclick="app.saveProject()"><i class="fas fa-save mr-1"></i> <span data-i18n="save">GUARDAR</span></button>
+        </div>
+    </header>
+
+    <section class="ribbon-container">
+        <div class="ribbon-tabs">
+            <div class="r-tab active" onclick="ui.switchTab(this, 'tab-model')" data-i18n="tab_structure">Estructura</div>
+            <div class="r-tab" onclick="ui.switchTab(this, 'tab-conn')" data-i18n="tab_connect">Conexiones</div>
+            <div class="r-tab" onclick="ui.switchTab(this, 'tab-bolt')" data-i18n="tab_bolts">Tornillería</div>
+            <div class="r-tab" onclick="ui.switchTab(this, 'tab-tools')" data-i18n="tab_edit">Edición</div>
+            <div class="r-tab" onclick="ui.switchTab(this, 'tab-view')" data-i18n="tab_view">Visualización</div>
+        </div>
+        <div class="ribbon-content">
+            <div id="tab-model" class="ribbon-group active">
+                <div class="r-btn" onclick="ui.quickProfile('HEB')"><i class="fas fa-building-columns" style="color:var(--text-muted)"></i><span>Columna</span></div>
+                <div class="r-btn" onclick="ui.quickProfile('IPE')"><i class="fas fa-grip-lines" style="color:var(--text-muted)"></i><span>Viga</span></div>
+                <div class="r-btn" onclick="ui.quickProfile('UPN')"><i class="fas fa-vector-square" style="color:var(--text-muted)"></i><span>Canal</span></div>
+                <div class="r-btn" onclick="ui.quickProfile('CHS')"><i class="far fa-circle" style="color:var(--text-muted)"></i><span>Tubo</span></div>
+                <div class="r-btn" onclick="ui.quickProfile('L')"><i class="fas fa-angle-double-right" style="color:var(--text-muted)"></i><span>Angular</span></div>
+                <div class="r-sep"></div>
+                <div class="r-btn" onclick="app.createProfileDefault()"><i class="fas fa-i-cursor" style="color:var(--accent)"></i><span>Perfil I</span></div>
+            </div>
+            <div id="tab-conn" class="ribbon-group">
+                <div class="r-btn" onclick="app.createBasePlate()"><i class="fas fa-square-full"></i><span data-i18n="base_plate">Placa Base</span></div>
+                <div class="r-btn" onclick="app.createSquareGusset()"><i class="fas fa-square"></i><span data-i18n="gusset_sq">Cartela □</span></div>
+                <div class="r-btn" onclick="app.createTriangularGusset()"><i class="fas fa-play fa-rotate-270"></i><span data-i18n="gusset_tri">Cartela ◢</span></div>
+                <div class="r-sep"></div>
+                <div id="tool-weld" class="r-btn" onclick="app.setTool('weld')"><i class="fas fa-fire-flame-curved" style="color:#FF3B30"></i><span data-i18n="weld">Soldadura</span></div>
+            </div>
+            <div id="tab-bolt" class="ribbon-group">
+                <div class="r-btn" onclick="app.createBoltDefault()"><i class="fas fa-screw"></i><span data-i18n="bolt">Tornillo</span></div>
+                <div class="r-btn" onclick="app.createNutDefault()"><i class="fas fa-border-all"></i><span data-i18n="nut">Tuerca</span></div>
+                <div class="r-btn" onclick="app.createWasherDefault()"><i class="fas fa-ring"></i><span data-i18n="washer">Arandela</span></div>
+                <div class="r-sep"></div>
+                <div class="r-btn" onclick="app.createAnchor()"><i class="fas fa-arrow-down"></i><span data-i18n="anchor">Anclaje</span></div>
+            </div>
+            <div id="tab-tools" class="ribbon-group">
+                <div id="tool-select" class="r-btn active" onclick="app.setTool('select')"><i class="fas fa-mouse-pointer"></i><span data-i18n="select">Seleccionar</span></div>
+                <div id="tool-translate" class="r-btn" onclick="app.setTool('translate')"><i class="fas fa-arrows-alt"></i><span data-i18n="move">Mover</span></div>
+                <div id="tool-rotate" class="r-btn" onclick="app.setTool('rotate')"><i class="fas fa-sync-alt"></i><span data-i18n="rotate">Rotar</span></div>
+                <div id="tool-scale" class="r-btn" onclick="app.setTool('scale')"><i class="fas fa-expand-arrows-alt"></i><span data-i18n="scale">Escalar</span></div>
+                <div class="r-sep"></div>
+                <div id="tool-measure" class="r-btn" onclick="app.setTool('measure')"><i class="fas fa-ruler-combined" style="color:#FFCC00"></i><span data-i18n="measure">Medir</span></div>
+            </div>
+            <div id="tab-view" class="ribbon-group">
+                <div class="r-btn" onclick="app.setView('ISO')"><i class="fas fa-cube"></i><span>ISO 3D</span></div>
+                <div class="r-btn" onclick="app.setView('TOP')"><i class="fas fa-arrow-down"></i><span data-i18n="top">Planta</span></div>
+                <div class="r-btn" onclick="app.setView('FRONT')"><i class="fas fa-arrow-right"></i><span data-i18n="front">Frontal</span></div>
+                <div class="r-btn" onclick="app.setView('LEFT')"><i class="fas fa-arrow-left"></i><span data-i18n="left">Izq.</span></div>
+                <div class="r-btn" onclick="app.setView('RIGHT')"><i class="fas fa-arrow-right"></i><span data-i18n="right">Der.</span></div>
+                <div class="r-sep"></div>
+                <div style="display:flex; flex-direction:column; justify-content:center; margin-right:10px; padding: 0 10px;">
+                    <label style="font-size:9px; color:var(--text-muted); margin-bottom:2px;">Grid</label>
+                    <select id="grid-selector" class="p-select" style="height:20px; font-size:10px; padding:0; width:70px;" onchange="app.updateGridConfig()">
+                        <option value="4_4">4x4 m</option>
+                        <option value="8_8">8x8 m</option>
+                        <option value="16_16" selected>16x16 m</option>
+                        <option value="32_32">32x32 m</option>
+                    </select>
+                </div>
+                <div id="tool-snap" class="r-btn active" onclick="app.toggleSnap()"><i class="fas fa-magnet"></i><span>Snap</span></div>
+                <div class="r-btn" onclick="app.renderHighRes()"><i class="fas fa-camera" style="color:var(--accent)"></i><span data-i18n="capture">Captura</span></div>
+            </div>
+        </div>
+    </section>
+
+    <nav class="left-menu-panel">
+        <div class="menu-item" onclick="app.startNewProject()" title="Nuevo"><i class="fas fa-file-circle-plus"></i></div>
+        <div class="menu-item" onclick="document.getElementById('file-input').click()" title="Abrir"><i class="fas fa-folder-open"></i></div>
+        <div class="menu-item" onclick="app.saveProject()" title="Guardar"><i class="fas fa-save"></i></div>
+        <!-- Spacer removed for strict stacking -->
+        <div class="menu-item" onclick="app.setTool('measure')" title="Medir"><i class="fas fa-ruler"></i></div>
+        <div class="menu-item" onclick="app.setView('ISO')" title="Vista 3D"><i class="fas fa-cube"></i></div>
+        <div class="menu-item" onclick="ui.toggleProperties()" title="Propiedades"><i class="fas fa-list"></i></div>
+        <div style="margin-top:auto; width:100%;">
+            <div class="menu-item" onclick="ui.toggleLanguage()" title="Language/Idioma"><i class="fas fa-cog"></i><span id="lang-ind" style="font-size:10px; font-weight:700; position:absolute; bottom:5px;">ES</span></div>
+        </div>
+    </nav>
+
+    <main class="canvas-area">
+        <div id="canvas-container" style="width:100%; height:100%;"></div>
+        <div id="labels-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden;"></div>
+        <div id="toast" class="toast"><i class="fas fa-info-circle"></i> <span>Notificación</span></div>
+
+        <!-- NEW ZOOM CONTROL -->
+        <div id="zoom-control-panel">
+            <i class="fas fa-search-minus" style="color:var(--text-muted); cursor:pointer;" onclick="app.adjustZoom(-0.1)"></i>
+            <input type="range" id="zoom-slider" min="0.5" max="3.0" step="0.1" value="1.0" oninput="app.setZoom(this.value)" style="width:100px; cursor:pointer;">
+            <i class="fas fa-search-plus" style="color:var(--text-muted); cursor:pointer;" onclick="app.adjustZoom(0.1)"></i>
+            <span id="zoom-val" style="font-family:'JetBrains Mono'; font-size:10px; color:var(--text-main); width:30px; text-align:center;">1.0x</span>
+        </div>
+    </main>
+
+    <aside id="inspector" class="right-props-panel">
+        <div class="props-header">
+            <span data-i18n="properties">PROPIEDADES</span>
+            <span id="obj-id" style="color:var(--accent); font-family:'JetBrains Mono'; font-size:10px;">SELECCIÓN: NINGUNA</span>
+            <div style="cursor:pointer;" onclick="ui.toggleProperties()"><i class="fas fa-times"></i></div>
+        </div>
+        
+        <div class="section-preview-container">
+            <div class="blueprint-grid"></div>
+            <canvas id="section-canvas" width="220" height="180"></canvas>
+            <div class="obj-badge" id="preview-badge">DETALLE TÉCNICO</div>
+        </div>
+
+        <div style="flex:1; overflow-y:auto;">
+            <div class="prop-section">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="eng_data">DATOS DE INGENIERÍA</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div class="p-row">
+                        <label class="p-label" data-i18n="designation">Designación</label>
+                        <input type="text" id="tech-name" class="p-input p-readonly" readonly value="--">
+                    </div>
+                    <div class="p-row">
+                        <label class="p-label" data-i18n="steel_grade">Calidad Acero</label>
+                        <select id="tech-grade" class="p-select">
+                            <option value="S235">S235 JR (Estructural)</option>
+                            <option value="S275" selected>S275 JR (Estándar)</option>
+                            <option value="S355">S355 J2 (Alta Resistencia)</option>
+                        </select>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="p-row">
+                            <label class="p-label">Area (cm²)</label>
+                            <input type="text" id="tech-area" class="p-input p-readonly" readonly value="--">
+                        </div>
+                        <div class="p-row">
+                            <label class="p-label">Masa (kg)</label>
+                            <input type="text" id="tech-weight" class="p-input p-readonly" readonly value="0.00">
+                        </div>
+                    </div>
+                    <div id="tech-extra-container" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="p-row"><label class="p-label">tw (mm)</label><input type="text" id="tech-tw" class="p-input p-readonly" readonly value="--"></div>
+                        <div class="p-row"><label class="p-label">tf (mm)</label><input type="text" id="tech-tf" class="p-input p-readonly" readonly value="--"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="editor-profile" class="prop-section" style="display:none;">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="geometry">GEOMETRÍA PERFIL</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div class="p-row">
+                        <label class="p-label" data-i18n="series">Serie</label>
+                        <select id="edit-type" class="p-select" onchange="app.updateSelectedGeometry()"></select>
+                    </div>
+                    <div class="p-row">
+                        <label class="p-label" data-i18n="size">Canto / Tamaño</label>
+                        <select id="edit-size" class="p-select" onchange="app.updateSelectedGeometry()"></select>
+                    </div>
+                    <div class="p-row">
+                        <label class="p-label" data-i18n="length">Longitud (m)</label>
+                        <input type="number" id="edit-len" class="p-input" step="0.1" onchange="app.updateSelectedGeometry()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="editor-component" class="prop-section" style="display:none;">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="dims_plate">DIMENSIONES PLACA</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div class="p-row"><label class="p-label" data-i18n="width_x">Ancho X (m)</label><input type="number" id="comp-w" class="p-input" step="0.01" onchange="app.updateComponent()"></div>
+                    <div class="p-row"><label class="p-label" data-i18n="height_y">Alto Y (m)</label><input type="number" id="comp-h" class="p-input" step="0.01" onchange="app.updateComponent()"></div>
+                    <div class="p-row"><label class="p-label" data-i18n="thick_t">Espesor T (m)</label><input type="number" id="comp-t" class="p-input" step="0.001" onchange="app.updateComponent()"></div>
+                </div>
+            </div>
+
+            <div id="editor-fastener" class="prop-section" style="display:none;">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="mech_spec">ESPECIFICACIÓN MECÁNICA</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div class="p-row"><label class="p-label" data-i18n="metric">Métrica (M)</label>
+                        <select id="fast-size" class="p-select" onchange="app.updateFastener()">
+                            <option value="12">M12 (Standard)</option><option value="16">M16 (Struct)</option><option value="20">M20 (Heavy)</option><option value="24">M24 (Heavy)</option><option value="30">M30 (Bridge)</option>
+                        </select>
+                    </div>
+                    <div id="fast-len-container" class="p-row"><label class="p-label" data-i18n="stem_len">Longitud Vástago (mm)</label><input type="number" id="fast-len" class="p-input" step="5" value="60" onchange="app.updateFastener()"></div>
+                </div>
+            </div>
+
+            <div class="prop-section">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="finish_paint">ACABADOS Y PINTURA</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div class="color-grid">
+                        <div class="c-swatch" style="background:#808080" onclick="app.setMaterial('steel')" title="Acero"></div>
+                        <div class="c-swatch" style="background:#1a1a1a" onclick="app.setMaterial('dark')" title="Negro"></div>
+                        <div class="c-swatch" style="background:#e0e0e0" onclick="app.setMaterial('galv')" title="Galvanizado"></div>
+                        <div class="c-swatch" style="background:#2ecc71" onclick="app.setCustomColor('#2ecc71')" title="Verde Seguridad"></div>
+                        <div class="c-swatch" style="background:#0078d4" onclick="app.setCustomColor('#0078d4')" title="Azul Corporativo"></div>
+                        <div class="c-swatch" style="background:#e91e63" onclick="app.setCustomColor('#e91e63')" title="Magenta"></div>
+                        <div class="c-swatch" style="background:#ffc0cb" onclick="app.setCustomColor('#ffc0cb')" title="Rosa Claro"></div>
+                        <div class="c-swatch" style="background:#f1c40f" onclick="app.setCustomColor('#f1c40f')" title="Amarillo Tráfico"></div>
+                        <input type="color" class="c-swatch" style="padding:0; width:100%; height: 24px; border:none; grid-column: span 4;" oninput="app.setCustomColor(this.value)" title="Color Personalizado">
+                    </div>
+                </div>
+            </div>
+
+            <div class="prop-section">
+                <div class="prop-title" onclick="ui.toggleSection(this)">
+                    <span data-i18n="coords">COORDENADAS</span> <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="prop-body open">
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; margin-bottom:8px;">
+                        <input type="number" id="inp-x" class="p-input" placeholder="X" onchange="app.updateTransformFromUI()">
+                        <input type="number" id="inp-y" class="p-input" placeholder="Y" onchange="app.updateTransformFromUI()">
+                        <input type="number" id="inp-z" class="p-input" placeholder="Z" onchange="app.updateTransformFromUI()">
+                    </div>
+                    <label class="p-label" data-i18n="rotation">Rotación Axial (grados)</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px;">
+                        <input type="number" id="inp-rx" class="p-input" placeholder="RX" onchange="app.updateTransformFromUI()">
+                        <input type="number" id="inp-ry" class="p-input" placeholder="RY" onchange="app.updateTransformFromUI()">
+                        <input type="number" id="inp-rz" class="p-input" placeholder="RZ" onchange="app.updateTransformFromUI()">
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 15px; margin-top:auto;">
+                <button class="p-input bevel-btn" style="background:rgba(220, 38, 38, 0.1); color:#ef4444; border:1px solid #ef4444; cursor:pointer; font-weight:600;" onclick="app.deleteSelected()"><i class="fas fa-trash mr-2"></i> <span data-i18n="delete">BORRAR OBJETO</span></button>
+            </div>
+        </div>
+    </aside>
+
+    <input type="file" id="file-input" style="display:none" onchange="app.importProject(this)">
+    <select id="create-type" style="display:none;"><option value="IPE">IPE</option><option value="IPN">IPN</option><option value="UPN">UPN</option><option value="C">C</option><option value="HEB">HEB</option><option value="L">L</option><option value="CHS">CHS</option></select>
+</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+    const DB = {
+        IPE: [80, 100, 120, 140, 160, 180, 200, 220, 240, 270, 300, 330, 360, 400, 500],
+        IPN: [80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 300, 340, 400],
+        HEB: [100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 400],
+        UPN: [80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 300],
+        C:   [80, 100, 120, 140, 160, 200, 250],
+        L:   [40, 50, 60, 70, 80, 90, 100, 120, 150, 200],
+        CHS: [40, 50, 60, 80, 100, 120, 150, 200, 250, 300]
+    };
+
+    const LANG = {
+        es: {
+            new_project: "NUEVO PROYECTO", open_file: "ABRIR ARCHIVO", projects_panel: "Panel de Proyectos", no_projects: "No hay proyectos recientes",
+            day_mode: "Modo Día", night_mode: "Modo Noche", save: "GUARDAR",
+            tab_structure: "Estructura", tab_connect: "Conexiones", tab_bolts: "Tornillería", tab_edit: "Edición", tab_view: "Visualización",
+            base_plate: "Placa Base", gusset_sq: "Cartela □", gusset_tri: "Cartela ◢", weld: "Soldadura",
+            bolt: "Tornillo", nut: "Tuerca", washer: "Arandela", anchor: "Anclaje",
+            select: "Seleccionar", move: "Mover", rotate: "Rotar", scale: "Escalar", measure: "Medir",
+            top: "Planta", front: "Frontal", left: "Izq.", right: "Der.", capture: "Captura",
+            properties: "PROPIEDADES", eng_data: "DATOS DE INGENIERÍA", designation: "Designación", steel_grade: "Calidad Acero",
+            geometry: "GEOMETRÍA PERFIL", series: "Serie", size: "Canto / Tamaño", length: "Longitud (m)",
+            dims_plate: "DIMENSIONES PLACA", width_x: "Ancho X", height_y: "Alto Y", thick_t: "Espesor T",
+            mech_spec: "ESPECIFICACIÓN MECÁNICA", metric: "Métrica (M)", stem_len: "Longitud Vástago (mm)",
+            finish_paint: "ACABADOS Y PINTURA", coords: "COORDENADAS", rotation: "Rotación Axial (grados)", delete: "BORRAR OBJETO"
+        },
+        en: {
+            new_project: "NEW PROJECT", open_file: "OPEN FILE", projects_panel: "Project Dashboard", no_projects: "No recent projects",
+            day_mode: "Day Mode", night_mode: "Night Mode", save: "SAVE",
+            tab_structure: "Structure", tab_connect: "Connections", tab_bolts: "Fasteners", tab_edit: "Editing", tab_view: "Visualization",
+            base_plate: "Base Plate", gusset_sq: "Gusset □", gusset_tri: "Gusset ◢", weld: "Weld",
+            bolt: "Bolt", nut: "Nut", washer: "Washer", anchor: "Anchor",
+            select: "Select", move: "Move", rotate: "Rotate", scale: "Scale", measure: "Measure",
+            top: "Top", front: "Front", left: "Left", right: "Right", capture: "Capture",
+            properties: "PROPERTIES", eng_data: "ENGINEERING DATA", designation: "Designation", steel_grade: "Steel Grade",
+            geometry: "PROFILE GEOMETRY", series: "Series", size: "Depth / Size", length: "Length (m)",
+            dims_plate: "PLATE DIMENSIONS", width_x: "Width X", height_y: "Height Y", thick_t: "Thickness T",
+            mech_spec: "MECHANICAL SPEC", metric: "Metric (M)", stem_len: "Stem Length (mm)",
+            finish_paint: "FINISH & PAINTING", coords: "COORDINATES", rotation: "Axial Rotation (deg)", delete: "DELETE OBJECT"
+        }
+    };
+    let currentLang = 'es';
+
+    let scene, mainCamera, renderer, controls, gizmo, camera, dirLight, ambLight, hemiLight, gridHelper, subGridHelper; 
+    const objects = [];
+    const measures = []; 
+    const weldLines = []; 
+    let selectedObj = null;
+    let currentProjectName = "Sin Título";
+    let isDayMode = false;
+
+    const matSteel = new THREE.MeshStandardMaterial({ color: 0x8899a6, roughness: 0.5, metalness: 0.7, flatShading: false });
+    const matDark = new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.6, metalness: 0.4, flatShading: false });
+    const matGalv = new THREE.MeshStandardMaterial({ color: 0xd0d5db, roughness: 0.3, metalness: 0.5, flatShading: false });
+    const matWeld = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.8, emissive: 0xaa0000, emissiveIntensity: 0.2 });
+    const matMeasure = new THREE.LineBasicMaterial({ color: 0xeab308, depthTest: false, depthWrite: false });
+
+    // Section Drawer (2D) - UPDATED FOR BOLTS/PLATES
+    const SectionDrawer = {
+        canvas: null, ctx: null,
+        init: function() { this.canvas = document.getElementById('section-canvas'); this.ctx = this.canvas.getContext('2d'); },
+        clear: function() { if(!this.ctx) return; this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); },
+        draw: function(data) {
+            if(!this.ctx) this.init(); this.clear(); const ctx = this.ctx;
+            const w = this.canvas.width; const h = this.canvas.height; const cx = w/2; const cy = h/2;
+            const isDay = document.body.classList.contains('light-theme');
+            ctx.strokeStyle = isDay ? '#1a1a1a' : '#E5E5E5'; ctx.fillStyle = isDay ? '#d1d5db' : '#333333'; ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const type = data.type;
+            const size = data.size || 100;
+
+            if (['IPE','IPN','HEB'].includes(type)) {
+                // I Profile logic
+                const drawW = (type==='HEB')?100:65; const drawH = 110;
+                const hw=drawW/2; const hh=drawH/2; const tw=8; const tf=10;
+                ctx.moveTo(cx-hw, cy-hh); ctx.lineTo(cx+hw, cy-hh); ctx.lineTo(cx+hw, cy-hh+tf); ctx.lineTo(cx+tw, cy-hh+tf);
+                ctx.lineTo(cx+tw, cy+hh-tf); ctx.lineTo(cx+hw, cy+hh-tf); ctx.lineTo(cx+hw, cy+hh); ctx.lineTo(cx-hw, cy+hh);
+                ctx.lineTo(cx-hw, cy+hh-tf); ctx.lineTo(cx-tw, cy+hh-tf); ctx.lineTo(cx-tw, cy-hh+tf); ctx.lineTo(cx-hw, cy-hh+tf); 
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                this.drawDim(cx+hw+20, cy-hh, cx+hw+20, cy+hh, `h=${size}mm`);
+            } 
+            else if (['BOLT'].includes(type)) {
+                // Bolt Logic
+                const d = 40; const len = 100; const headH = 20; const headW = 65;
+                // Head
+                ctx.fillRect(cx-headW/2, cy-len/2-headH, headW, headH); ctx.strokeRect(cx-headW/2, cy-len/2-headH, headW, headH);
+                // Shank
+                ctx.fillRect(cx-d/2, cy-len/2, d, len); ctx.strokeRect(cx-d/2, cy-len/2, d, len);
+                // Thread lines
+                ctx.beginPath(); ctx.moveTo(cx-d/2, cy+len/2-20); ctx.lineTo(cx+d/2, cy+len/2-20); ctx.stroke();
+                this.drawDim(cx+40, cy-len/2, cx+40, cy+len/2, `L=${data.len}mm`);
+                this.drawDim(cx-35, cy-len/2-35, cx+35, cy-len/2-35, `M${size}`);
+            }
+            else if (['NUT'].includes(type)) {
+                // Nut (Hexagon view)
+                const r = 50;
+                ctx.moveTo(cx + r * Math.cos(0), cy + r * Math.sin(0));
+                for (let i = 1; i <= 6; i++) ctx.lineTo(cx + r * Math.cos(i * 2 * Math.PI / 6), cy + r * Math.sin(i * 2 * Math.PI / 6));
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx,cy,25,0,2*Math.PI); ctx.stroke(); // Hole
+                this.drawDim(cx-50, cy+60, cx+50, cy+60, `M${size}`);
+            }
+            else if (['WASHER'].includes(type)) {
+                ctx.beginPath(); ctx.arc(cx,cy,50,0,2*Math.PI); ctx.stroke(); // Outer
+                ctx.beginPath(); ctx.arc(cx,cy,25,0,2*Math.PI); ctx.stroke(); // Inner
+                this.drawDim(cx, cy, cx+50, cy, `M${size}`);
+            }
+            else if (['PLATE','BASE_PLATE','GUSSET_SQR'].includes(type)) {
+                ctx.fillRect(cx-60, cy-40, 120, 80); ctx.strokeRect(cx-60, cy-40, 120, 80);
+                this.drawDim(cx-60, cy-55, cx+60, cy-55, `${(data.w*1000).toFixed(0)} mm`);
+                this.drawDim(cx+75, cy-40, cx+75, cy+40, `${(data.h*1000).toFixed(0)} mm`);
+                ctx.fillStyle = isDay?'#000':'#fff'; ctx.font='10px Inter'; ctx.fillText(`t=${(data.t*1000).toFixed(0)}mm`, cx-20, cy);
+            }
+            else if (['ANCHOR'].includes(type)) {
+                // Anchor L shape
+                ctx.beginPath(); ctx.moveTo(cx-10, cy-60); ctx.lineTo(cx+10, cy-60); ctx.lineTo(cx+10, cy+40); ctx.lineTo(cx+40, cy+40);
+                ctx.lineTo(cx+40, cy+60); ctx.lineTo(cx-10, cy+60); ctx.closePath(); ctx.fill(); ctx.stroke();
+                this.drawDim(cx-25, cy-60, cx-25, cy+60, `L=${(data.len).toFixed(0)}`);
+            }
+            else {
+                ctx.fillText("No Preview", cx-20, cy);
+            }
+        },
+        drawDim: function(x1, y1, x2, y2, text) {
+            const ctx = this.ctx; ctx.save(); ctx.strokeStyle = '#0078d4'; ctx.fillStyle = '#0078d4'; ctx.lineWidth = 1; ctx.font='bold 10px JetBrains Mono';
+            ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+            if(Math.abs(x1-x2) < 1) { // Vertical
+                ctx.beginPath(); ctx.moveTo(x1-3, y1); ctx.lineTo(x1+3, y1); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x2-3, y2); ctx.lineTo(x2+3, y2); ctx.stroke();
+                ctx.save(); ctx.translate(x1-5, (y1+y2)/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillText(text, 0, -3); ctx.restore();
+            } else { // Horizontal
+                ctx.beginPath(); ctx.moveTo(x1, y1-3); ctx.lineTo(x1, y1+3); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x2, y2-3); ctx.lineTo(x2, y2+3); ctx.stroke();
+                ctx.textAlign='center'; ctx.fillText(text, (x1+x2)/2, y1-5);
+            }
+            ctx.restore();
+        }
+    };
+
+    const GeometryFactory = {
+        generateProfile: (type, sizeStr, len) => {
+            let dim = (parseInt(sizeStr) / 1000) || 0.1;
+            let shape;
+            if (type === 'IPE' || type === 'IPN') shape = GeometryFactory.IShape(dim, dim/2, dim*0.05, dim*0.08);
+            else if (type === 'HEB') shape = GeometryFactory.IShape(dim, dim, dim*0.06, dim*0.1);
+            else if (type === 'UPN' || type === 'C') shape = GeometryFactory.UShape(dim, dim/2, dim*0.06, dim*0.09);
+            else if (type === 'L') shape = GeometryFactory.LShape(dim, dim, dim*0.1);
+            else if (type === 'CHS') shape = GeometryFactory.HollowCircle(dim/2, dim*0.05);
+            else shape = GeometryFactory.HollowRect(0.1, 0.1, 0.01);
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: len, bevelEnabled: false, steps: 1 });
+            geo.center(); return new THREE.Mesh(geo);
+        },
+        generateComponent: (type, w, h, t) => {
+            let geo;
+            if(type === 'SUPPORT_ANGLE') { const s = GeometryFactory.LShape(w, w, t); geo = new THREE.ExtrudeGeometry(s, { depth: h, bevelEnabled:false }); geo.center(); } 
+            else if(type === 'PLATE' || type === 'BASE_PLATE') { geo = new THREE.BoxGeometry(w, t, h); } 
+            else if(type === 'GUSSET_TRI') { const s = new THREE.Shape(); s.moveTo(-w/2, -h/2); s.lineTo(w/2, -h/2); s.lineTo(-w/2, h/2); s.closePath(); geo = new THREE.ExtrudeGeometry(s, { depth: t, bevelEnabled:false }); } 
+            else if(type === 'GUSSET_SQR') { geo = new THREE.BoxGeometry(w, h, t); }
+            const mesh = new THREE.Mesh(geo);
+            if(type === 'GUSSET_TRI') mesh.rotation.x = -Math.PI/2;
+            return mesh;
+        },
+        generateAnchor: (d, len) => {
+             const group = new THREE.Group();
+             const v = new THREE.Mesh(new THREE.CylinderGeometry(d/2, d/2, len, 16), matSteel.clone()); v.position.y = len/2;
+             const hook = new THREE.Mesh(new THREE.CylinderGeometry(d/2, d/2, d*4, 16), matSteel.clone()); hook.rotation.z = Math.PI/2; hook.position.set(d*2, 0, 0); 
+             group.add(v); group.add(hook); return group;
+        },
+        generateWeldLine: (p1, p2) => {
+            const vec = new THREE.Vector3().subVectors(p2, p1);
+            const len = vec.length();
+            const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+            const geo = new THREE.CylinderGeometry(0.01, 0.01, len, 8);
+            const mesh = new THREE.Mesh(geo, matWeld);
+            mesh.position.copy(mid);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vec.clone().normalize());
+            return mesh;
+        },
+        IShape: (h,b,tw,tf) => { const s = new THREE.Shape(); s.moveTo(-b/2,-h/2); s.lineTo(b/2,-h/2); s.lineTo(b/2,-h/2+tf); s.lineTo(tw/2,-h/2+tf); s.lineTo(tw/2,h/2-tf); s.lineTo(b/2,h/2-tf); s.lineTo(b/2,h/2); s.lineTo(-b/2,h/2); s.lineTo(-b/2,h/2-tf); s.lineTo(-tw/2,h/2-tf); s.lineTo(-tw/2,-h/2+tf); s.lineTo(-b/2,-h/2+tf); return s; },
+        UShape: (h,b,tw,tf) => { const s = new THREE.Shape(); s.moveTo(-b/2,-h/2); s.lineTo(b/2,-h/2); s.lineTo(b/2,-h/2+tf); s.lineTo(-b/2+tw,-h/2+tf); s.lineTo(-b/2+tw,h/2-tf); s.lineTo(b/2,h/2-tf); s.lineTo(b/2,h/2); s.lineTo(-b/2,h/2); return s; },
+        LShape: (h,b,t) => { const s = new THREE.Shape(); s.moveTo(-b/2,-h/2); s.lineTo(b/2,-h/2); s.lineTo(b/2,-h/2+t); s.lineTo(-b/2+t,-h/2+t); s.lineTo(-b/2+t,h/2); s.lineTo(-b/2,h/2); return s; },
+        HollowRect: (w,h,t) => { const s = new THREE.Shape(); s.moveTo(-w/2,-h/2); s.lineTo(w/2,-h/2); s.lineTo(w/2,h/2); s.lineTo(-w/2,h/2); s.closePath(); const hole = new THREE.Path(); hole.moveTo(-w/2+t,-h/2+t); hole.lineTo(w/2-t,-h/2+t); hole.lineTo(w/2-t,h/2-t); hole.lineTo(-w/2+t,h/2-t); hole.closePath(); s.holes.push(hole); return s; },
+        HollowCircle: (r,t) => { const s = new THREE.Shape(); s.absarc(0,0,r,0,Math.PI*2,false); const hole = new THREE.Path(); hole.absarc(0,0,r-t,0,Math.PI*2,true); s.holes.push(hole); return s; }
+    };
+
+    const app = {
+        mode: 'select',
+        measureState: { step: 0, p1: null, tempObj: null, tempLine: null },
+        weldState: { step: 0, p1: null, tempObj: null },
+
+        startNewProject: () => {
+            currentProjectName = "Nuevo Proyecto " + new Date().toLocaleDateString();
+            document.getElementById('project-name-display').innerText = currentProjectName;
+            app.resetScene();
+            document.getElementById('home-screen').classList.add('hidden-screen');
+            document.getElementById('app').classList.add('visible');
+            app.updateGridConfig();
+        },
+        saveProject: () => {
+            const data = objects.map(o => ({ type: o.userData.type, userData: o.userData, pos: o.position, rot: o.rotation, matColor: o.material ? o.material.color.getHex() : 0x808080 }));
+            const project = { name: currentProjectName, date: new Date().toISOString(), data: data };
+            localStorage.setItem('cometv_pj_' + Date.now(), JSON.stringify(project));
+            ui.toast(currentLang==='es'?"Proyecto Guardado":"Project Saved");
+        },
+        loadProjectsList: () => {
+            const list = document.getElementById('projects-list'); list.innerHTML = '';
+            let count = 0;
+            for(let i=0; i<localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if(key.startsWith('cometv_pj_')) {
+                    count++;
+                    const p = JSON.parse(localStorage.getItem(key));
+                    const card = document.createElement('div'); card.className = 'project-card';
+                    card.innerHTML = `<div><div class="pj-name" style="color:white; font-weight:600">${p.name}</div><div class="pj-date" style="color:#888; font-size:11px;">${new Date(p.date).toLocaleString()}</div></div><button class="p-input bevel-btn" style="width:auto; cursor:pointer;" onclick="app.loadProject('${key}')">ABRIR</button>`;
+                    list.appendChild(card);
+                }
+            }
+            document.getElementById('empty-state').style.display = count === 0 ? 'block' : 'none';
+        },
+        loadProject: (key) => {
+            const p = JSON.parse(localStorage.getItem(key));
+            currentProjectName = p.name;
+            document.getElementById('project-name-display').innerText = currentProjectName;
+            app.resetScene();
+            p.data.forEach(d => {
+                let obj;
+                if(d.type === 'WELD' && d.userData.p1 && d.userData.p2) {
+                     const p1 = new THREE.Vector3(d.userData.p1.x, d.userData.p1.y, d.userData.p1.z);
+                     const p2 = new THREE.Vector3(d.userData.p2.x, d.userData.p2.y, d.userData.p2.z);
+                     obj = GeometryFactory.generateWeldLine(p1, p2);
+                }
+                else if(d.type === 'PROFILE') obj = GeometryFactory.generateProfile(d.userData.pType, d.userData.pSize, d.userData.pLen);
+                else if(d.userData.type === 'ANCHOR') obj = GeometryFactory.generateAnchor(d.userData.cDiam/1000, d.userData.cLen/1000);
+                else if(d.type.includes('BOLT')||d.type.includes('NUT')||d.type.includes('WASHER')) app.spawnFastener(d.userData.type, d.userData.fSize, d.userData.fLen, false);
+                else obj = GeometryFactory.generateComponent(d.userData.type, d.userData.cW, d.userData.cH, d.userData.cT);
+                
+                if(d.type.includes('BOLT') || d.type.includes('NUT') || d.type.includes('WASHER')) obj = objects[objects.length-1];
+                else { 
+                    obj.userData = d.userData; 
+                    app.addToScene(obj); 
+                }
+                
+                obj.position.copy(d.pos); obj.rotation.copy(d.rot);
+                if(obj.material && d.type!=='WELD') obj.material.color.setHex(d.matColor);
+            });
+            
+            if(p.welds) {
+                p.welds.forEach(w => {
+                    const p1 = new THREE.Vector3(w.p1.x, w.p1.y, w.p1.z);
+                    const p2 = new THREE.Vector3(w.p2.x, w.p2.y, w.p2.z);
+                    const mesh = GeometryFactory.generateWeldLine(p1, p2);
+                    mesh.userData = { type: 'WELD', p1: p1, p2: p2, name: 'Soldadura' };
+                    app.addToScene(mesh);
+                });
+            }
+
+            document.getElementById('home-screen').classList.add('hidden-screen');
+            document.getElementById('app').classList.add('visible');
+            app.updateGridConfig();
+        },
+
+        updateGridConfig: () => {
+            const val = document.getElementById('grid-selector').value;
+            let size = 16, divs = 16;
+            if(val === '4_4') { size=4; divs=4; } else if(val === '8_8') { size=8; divs=8; } else if(val === '32_32') { size=32; divs=32; }
+            if(gridHelper) scene.remove(gridHelper); if(subGridHelper) scene.remove(subGridHelper);
+            
+            // GRID COLORS UPDATE
+            // Dark Mode: Main=Grey, Sub=White(Low Opacity)
+            // Light Mode: Main=Grey, Sub=Dark Grey
+            
+            const mainColor = 0x888888;
+            const subColor = isDayMode ? 0x444444 : 0xFFFFFF; // White in dark mode for visibility
+            
+            gridHelper = new THREE.GridHelper(size, divs, mainColor, mainColor); 
+            scene.add(gridHelper);
+            
+            if(size <= 16) {
+                subGridHelper = new THREE.GridHelper(size, divs*10, subColor, subColor);
+                subGridHelper.position.y = 0;
+                // Add transparency to not be overwhelming
+                subGridHelper.material.transparent = true;
+                subGridHelper.material.opacity = isDayMode ? 0.15 : 0.1;
+                scene.add(subGridHelper);
+            }
+        },
+
+        setTool: (mode) => {
+            app.mode = mode;
+            document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('tool-'+mode); if(btn) btn.classList.add('active');
+            if(['select', 'weld', 'measure'].includes(mode)) { if(gizmo) gizmo.detach(); }
+            else { if(gizmo) { gizmo.setMode(mode); if(selectedObj) gizmo.attach(selectedObj); } }
+            if(mode !== 'measure') { if(app.measureState.tempObj) { scene.remove(app.measureState.tempObj); app.measureState.tempObj = null; } if(app.measureState.tempLine) { scene.remove(app.measureState.tempLine); app.measureState.tempLine = null; } app.measureState.step = 0; }
+            if(mode !== 'weld') { if(app.weldState.tempObj) { scene.remove(app.weldState.tempObj); app.weldState.tempObj = null; } app.weldState.step = 0; }
+            ui.toast(currentLang==='es' ? `Herramienta: ${mode.toUpperCase()}` : `Tool: ${mode.toUpperCase()}`);
+        },
+
+        calculateProfileProps: (type, size, length) => {
+            let h = size; let b = size * 0.5; let tw = size * 0.06; let tf = size * 0.09;
+            if(type === 'HEB') { b = size; tw = size * 0.06; tf = size * 0.1; }
+            if(type === 'IPE') { b = size * 0.5; tw = size * 0.05; tf = size * 0.07; }
+            if(type === 'UPN') { b = size * 0.4; }
+            let areaMm2 = (2 * b * tf) + ((h - 2*tf) * tw);
+            if(type === 'CHS') { areaMm2 = Math.PI * ((size/2)**2 - ((size/2 - size*0.05)**2)); tw = size*0.05; tf = 0; }
+            const areaCm2 = areaMm2 / 100;
+            const volumeM3 = (areaMm2 / 1000000) * length;
+            const weight = volumeM3 * 7850;
+            return { tw: tw.toFixed(1), tf: tf.toFixed(1), area: areaCm2.toFixed(2), weight: weight.toFixed(2) };
+        },
+
+        getSnapPoint: (raycaster) => {
+            const hits = raycaster.intersectObjects(objects, true);
+            let bestSnap = null; let minScreenDist = 15;
+            if (hits.length > 0) {
+                const hit = hits[0]; const worldPoint = hit.point; const screenPoint = worldPoint.clone().project(camera);
+                if (hit.object.geometry) {
+                    const posAttr = hit.object.geometry.attributes.position; const objMatrix = hit.object.matrixWorld;
+                    for (let i = 0; i < posAttr.count; i++) {
+                        const vLocal = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+                        const vWorld = vLocal.applyMatrix4(objMatrix); const vScreen = vWorld.clone().project(camera);
+                        const dx = (vScreen.x - screenPoint.x) * (window.innerWidth/2); const dy = (vScreen.y - screenPoint.y) * (window.innerHeight/2);
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < minScreenDist) { minScreenDist = dist; bestSnap = { pos: vWorld, type: 'vertex' }; }
+                    }
+                }
+                if (bestSnap) return bestSnap;
+                return { pos: worldPoint, type: 'face' };
+            }
+            const p = new THREE.Plane(new THREE.Vector3(0,1,0), 0); const t = new THREE.Vector3(); raycaster.ray.intersectPlane(p, t);
+            return t ? { pos: t, type: 'grid' } : null;
+        },
+
+        updateSnapMarker: (snap) => {
+            if(!app.snapMesh) { 
+                // BOX GEOMETRY (Green Square)
+                app.snapMesh = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.02), new THREE.MeshBasicMaterial({color:0x00ff00, depthTest:false, depthWrite:false})); 
+                app.snapMesh.renderOrder = 999; scene.add(app.snapMesh); 
+            }
+            if(snap) { 
+                app.snapMesh.visible = true; 
+                app.snapMesh.position.copy(snap.pos); 
+                const c = snap.type==='vertex' ? 0x00ff00 : (snap.type==='face' ? 0xffaa00 : 0x00aaff); 
+                app.snapMesh.material.color.setHex(c); 
+                // Vertex snap is slightly larger
+                app.snapMesh.scale.setScalar(snap.type==='vertex' ? 1.5 : 1.0); 
+            } else { app.snapMesh.visible = false; }
+        },
+
+        handleWeldClick: (snap) => {
+            const state = app.weldState; const p = snap.pos;
+            if(state.step === 0) {
+                state.p1 = p; state.step = 1; 
+                const g = new THREE.BoxGeometry(0.03,0.03,0.03); const m = new THREE.MeshBasicMaterial({color: 0xff0000}); 
+                state.tempObj = new THREE.Mesh(g, m); state.tempObj.position.copy(p); scene.add(state.tempObj);
+                ui.toast(currentLang==='es'?"Inicio Soldadura":"Weld Start");
+            } else {
+                const mesh = GeometryFactory.generateWeldLine(state.p1, p); mesh.userData = { type: 'WELD', p1: state.p1, p2: p, name: 'Soldadura' }; app.addToScene(mesh); scene.remove(state.tempObj); state.tempObj = null; state.step = 0;
+                ui.toast(currentLang==='es'?"Soldadura Creada":"Weld Created");
+            }
+        },
+
+        handleMeasureClick: (snap) => {
+            const state = app.measureState; const p = snap.pos;
+            if(state.step === 0) {
+                state.p1 = p; state.step = 1; 
+                const g = new THREE.BoxGeometry(0.02,0.02,0.02); const m = new THREE.MeshBasicMaterial({color: 0xEAB308}); 
+                state.tempObj = new THREE.Mesh(g, m); state.tempObj.position.copy(p); scene.add(state.tempObj);
+                const lineGeo = new THREE.BufferGeometry().setFromPoints([p, p]); state.tempLine = new THREE.Line(lineGeo, matMeasure); state.tempLine.frustumCulled = false; scene.add(state.tempLine);
+                ui.toast(currentLang==='es'?"Inicio Medida":"Measure Start");
+            } else {
+                const dist = state.p1.distanceTo(p); const distCm = dist * 100; const pts = [state.p1, p]; const geo = new THREE.BufferGeometry().setFromPoints(pts); const line = new THREE.Line(geo, matMeasure); scene.add(line); measures.push(line); ui.createMeasureLabel(state.p1, p, distCm); scene.remove(state.tempObj); scene.remove(state.tempLine); state.tempObj = null; state.tempLine = null; state.step = 0;
+                ui.toast(`Dist: ${distCm.toFixed(2)} cm`);
+            }
+        },
+
+        createProfileDefault: () => {
+            const type = document.getElementById('create-type').value; const size = DB[type][1] || 100; const m = GeometryFactory.generateProfile(type, size, 3.0);
+            m.userData = { type: 'PROFILE', pType: type, pSize: size, pLen: 3.0, originalMat: matSteel.clone() }; m.material = m.userData.originalMat; m.rotation.x = Math.PI/2; m.castShadow = true; m.receiveShadow = true; app.addToScene(m);
+        },
+        createSupportAngle: () => app.spawnComponent('SUPPORT_ANGLE', 0.1, 0.2, 0.01, "Angular Apoyo"),
+        createSquareGusset: () => app.spawnComponent('GUSSET_SQR', 0.2, 0.2, 0.01, "Cartela Cuadrada"),
+        createTriangularGusset: () => app.spawnComponent('GUSSET_TRI', 0.2, 0.2, 0.01, "Cartela Triangular"),
+        createBasePlate: () => app.spawnComponent('BASE_PLATE', 0.3, 0.3, 0.02, "Placa Base"),
+        createAnchor: () => {
+             const g = GeometryFactory.generateAnchor(0.02, 0.4); g.userData = { type: 'ANCHOR', cDiam: 20, cLen: 400, name: "Perno Anclaje" }; g.traverse(c => { c.castShadow=true; c.receiveShadow=true; }); app.addToScene(g);
+        },
+        spawnComponent: (t, w, h, th, n) => {
+            const m = GeometryFactory.generateComponent(t, w, h, th); m.userData = { type: t, cW: w, cH: h, cT: th, name: n, originalMat: matSteel.clone() }; m.material = m.userData.originalMat; m.castShadow = true; m.receiveShadow = true; app.addToScene(m);
+        },
+        createBoltDefault: () => app.spawnFastener('BOLT', 20, 60),
+        createNutDefault: () => app.spawnFastener('NUT', 20, 0),
+        createWasherDefault: () => app.spawnFastener('WASHER', 20, 0),
+        spawnFastener: (t, s, l, add=true) => {
+            let o; const d=s/1000;
+            if(t==='BOLT'){ o=new THREE.Group(); const sh=new THREE.Mesh(new THREE.CylinderGeometry(d/2,d/2,l/1000,12), matSteel.clone()); sh.position.y=-(l/1000)/2; const hd=new THREE.Mesh(new THREE.CylinderGeometry(d*0.9,d*0.9,d*0.7,6), matSteel.clone()); o.add(sh); o.add(hd); }
+            else if(t==='NUT'){ o=new THREE.Mesh(new THREE.CylinderGeometry(d*0.9,d*0.9,d*0.8,6), matSteel.clone()); o.rotation.x=Math.PI/2; }
+            else { const sh=new THREE.Shape(); sh.absarc(0,0,d*1.1,0,Math.PI*2); const hl=new THREE.Path(); hl.absarc(0,0,d*0.55,0,Math.PI*2,true); sh.holes.push(hl); o=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:d*0.15,bevelEnabled:false}), matSteel.clone()); o.rotation.x=Math.PI/2; }
+            o.userData={type:t, fSize:s, fLen:l, name:`ISO ${s}`}; o.traverse(c=>{c.castShadow=true;c.receiveShadow=true});
+            if(add) app.addToScene(o); return o;
+        },
+
+        addToScene: (o) => { if(gizmo) gizmo.detach(); scene.add(o); objects.push(o); app.select(o); },
+        select: (o) => {
+            selectedObj = o; ui.updateLabels();
+            if(o) { if(gizmo && app.mode !== 'weld' && app.mode !== 'measure') gizmo.attach(o); ui.showInspector(true); ui.populateInspector(o); }
+            else { if(gizmo) gizmo.detach(); ui.showInspector(false); }
+        },
+        updateSelectedGeometry: () => {
+            if(!selectedObj || selectedObj.userData.type !== 'PROFILE') return;
+            const nt = document.getElementById('edit-type').value; const ns = document.getElementById('edit-size').value; const nl = parseFloat(document.getElementById('edit-len').value) || 1;
+            const t = GeometryFactory.generateProfile(nt, ns, nl);
+            selectedObj.geometry.dispose(); selectedObj.geometry = t.geometry.clone();
+            selectedObj.userData.pType = nt; selectedObj.userData.pSize = ns; selectedObj.userData.pLen = nl;
+            if(nt !== selectedObj.userData.pType) { ui.fillSizes('edit', nt); document.getElementById('edit-size').value = ns; }
+            ui.updateLabels(); ui.populateInspector(selectedObj);
+        },
+        updateComponent: () => {
+            if(!selectedObj) return; const t = selectedObj.userData.type;
+            if(t === 'ANCHOR') {
+                const d = parseFloat(document.getElementById('comp-w').value); const l = parseFloat(document.getElementById('comp-h').value);
+                const g = GeometryFactory.generateAnchor(d, l);
+                while(selectedObj.children.length > 0) selectedObj.remove(selectedObj.children[0]);
+                while(g.children.length > 0) selectedObj.add(g.children[0]);
+                selectedObj.userData.cDiam = d*1000; selectedObj.userData.cLen = l*1000; return;
+            }
+            if(!['PLATE','BASE_PLATE','GUSSET_SQR','GUSSET_TRI', 'SUPPORT_ANGLE'].includes(t)) return;
+            const w = parseFloat(document.getElementById('comp-w').value); const h = parseFloat(document.getElementById('comp-h').value); const th = parseFloat(document.getElementById('comp-t').value);
+            const m = GeometryFactory.generateComponent(t, w, h, th);
+            selectedObj.geometry.dispose(); selectedObj.geometry = m.geometry.clone();
+            selectedObj.userData.cW = w; selectedObj.userData.cH = h; selectedObj.userData.cT = th; ui.updateLabels();
+        },
+        updateFastener: () => {
+            if(!selectedObj || !['BOLT','NUT','WASHER'].includes(selectedObj.userData.type)) return;
+            const ns = parseInt(document.getElementById('fast-size').value); const nl = parseFloat(document.getElementById('fast-len').value);
+            const op = selectedObj.position.clone(); const or = selectedObj.rotation.clone();
+            app.deleteSelected(); app.spawnFastener(selectedObj.userData.type, ns, nl);
+            const n = objects[objects.length-1]; n.position.copy(op); n.rotation.copy(or); app.select(n);
+        },
+        updateTransformFromUI: () => {
+            if(!selectedObj) return;
+            selectedObj.position.set(parseFloat(document.getElementById('inp-x').value), parseFloat(document.getElementById('inp-y').value), parseFloat(document.getElementById('inp-z').value));
+            selectedObj.rotation.set(THREE.MathUtils.degToRad(parseFloat(document.getElementById('inp-rx').value)), THREE.MathUtils.degToRad(parseFloat(document.getElementById('inp-ry').value)), THREE.MathUtils.degToRad(parseFloat(document.getElementById('inp-rz').value)));
+            ui.updateLabels();
+        },
+        setMaterial: (type) => { if(!selectedObj) return; let m = (type==='galv'?matGalv:(type==='dark'?matDark:matSteel)); selectedObj.traverse(c=>{if(c.isMesh)c.material=m.clone()}); if(selectedObj.isMesh) selectedObj.material=m.clone(); },
+        setCustomColor: (hex) => { if(!selectedObj) return; const m = new THREE.MeshStandardMaterial({color:hex, roughness:0.5}); selectedObj.traverse(c=>{if(c.isMesh)c.material=m}); if(selectedObj.isMesh) selectedObj.material=m; },
+        
+        toggleSnap: () => {
+            const btn = document.getElementById('tool-snap'); btn.classList.toggle('active');
+            const snap = btn.classList.contains('active');
+            gizmo.setTranslationSnap(snap?0.01:null); gizmo.setRotationSnap(snap?THREE.MathUtils.degToRad(15):null);
+            ui.toast(snap?"Snap: ON":"Snap: OFF");
+        },
+        deleteSelected: () => { 
+            if(selectedObj) { 
+                gizmo.detach(); scene.remove(selectedObj); 
+                const idx = objects.indexOf(selectedObj); if(idx>-1) objects.splice(idx, 1);
+                app.select(null); ui.removeLabel(); 
+            } 
+        },
+        resetScene: () => { 
+            objects.forEach(o => scene.remove(o)); objects.length=0; 
+            measures.forEach(m => scene.remove(m)); measures.length=0;
+            weldLines.forEach(w => scene.remove(w)); weldLines.length=0;
+            document.querySelectorAll('.measure-label').forEach(e => e.remove());
+            app.select(null); 
+        },
+
+        setView: (view) => {
+            const container = document.getElementById('canvas-container');
+            const aspect = container.clientWidth / container.clientHeight;
+            const orthoSize = 8; 
+            const orthoCam = new THREE.OrthographicCamera(-orthoSize * aspect, orthoSize * aspect, orthoSize, -orthoSize, 0.1, 1000);
+            
+            renderer.shadowMap.enabled = true; dirLight.visible = true; ambLight.intensity = 0.5; hemiLight.intensity = 0.6;
+            
+            const bgColor = isDayMode ? 0xd4d4d8 : 0x1e1e21; // Match new BG
+            scene.background = new THREE.Color(bgColor);
+
+            if(view === 'ISO') { camera = mainCamera; controls.object = mainCamera; controls.enableRotate = true; } 
+            else {
+                controls.object = orthoCam; controls.enableRotate = false; camera = orthoCam;
+                if(view === 'TOP') { camera.position.set(0, 10, 0); camera.lookAt(0,0,0); camera.up.set(0, 0, -1); renderer.shadowMap.enabled = false; dirLight.visible = false; ambLight.intensity = 2.0; hemiLight.intensity=0.2; } 
+                else if(view === 'FRONT') { camera.position.set(0, 0, 10); camera.lookAt(0,0,0); camera.up.set(0,1,0); } 
+                else if(view === 'RIGHT') { camera.position.set(10, 0, 0); camera.lookAt(0,0,0); camera.up.set(0,1,0); }
+                else if(view === 'LEFT') { camera.position.set(-10, 0, 0); camera.lookAt(0,0,0); camera.up.set(0,1,0); }
+            }
+            if (gizmo) gizmo.camera = camera;
+            camera.updateProjectionMatrix(); controls.update();
+            ui.toast(currentLang==='es'?("Vista: " + view):("View: " + view));
+            
+            // Sync zoom slider
+            if(camera.zoom) {
+                document.getElementById('zoom-slider').value = camera.zoom;
+                document.getElementById('zoom-val').innerText = camera.zoom.toFixed(1) + 'x';
+            }
+        },
+        renderHighRes: () => { ui.toast(currentLang==='es'?"Generando Render...":"Rendering..."); renderer.render(scene, camera); setTimeout(() => { const l = document.createElement('a'); l.download = 'render.png'; l.href = renderer.domElement.toDataURL('image/png'); l.click(); ui.toast(currentLang==='es'?"Imagen Guardada":"Image Saved"); }, 100); },
+
+        // --- NEW ZOOM LOGIC (Request 1) ---
+        setZoom: (val) => {
+            camera.zoom = parseFloat(val);
+            camera.updateProjectionMatrix();
+            document.getElementById('zoom-val').innerText = camera.zoom.toFixed(1) + 'x';
+            document.getElementById('zoom-slider').value = camera.zoom;
+        },
+        adjustZoom: (delta) => {
+            let z = camera.zoom + delta;
+            z = Math.max(0.5, Math.min(3.0, z));
+            app.setZoom(z);
+        }
+    };
+
+    const ui = {
+        toggleCat: (el) => { el.nextElementSibling.classList.toggle('open'); },
+        
+        toggleProperties: () => { 
+            const appEl = document.getElementById('app');
+            const propsPanel = document.getElementById('inspector');
+            propsPanel.classList.toggle('hidden'); 
+            appEl.classList.toggle('props-hidden');
+            setTimeout(() => onResize(), 350);
+        },
+        
+        toggleSection: (el) => { el.nextElementSibling.classList.toggle('open'); },
+        fillSizes: (prefix, type) => { const s = document.getElementById(prefix+'-size'); s.innerHTML=''; DB[type]?.forEach(v => { const o = document.createElement('option'); o.value=v; o.text=v; s.add(o); }); },
+        populateSizesDropdown: () => { const t = document.getElementById('edit-type'); ['IPE','IPN','UPN','C','HEB','L','CHS'].forEach(v => { const o = document.createElement('option'); o.value=v; o.text=v; t.add(o); }); },
+        
+        showInspector: (show) => { 
+            const appEl = document.getElementById('app');
+            const el = document.getElementById('inspector'); 
+            if(show) { el.classList.remove('hidden'); appEl.classList.remove('props-hidden'); } 
+            else { el.classList.add('hidden'); appEl.classList.add('props-hidden'); }
+            setTimeout(() => onResize(), 350); 
+        },
+        
+        switchTab: (el, tabId) => {
+            document.querySelectorAll('.r-tab').forEach(t => t.classList.remove('active')); el.classList.add('active');
+            document.querySelectorAll('.ribbon-group').forEach(g => g.classList.remove('active')); document.getElementById(tabId).classList.add('active');
+        },
+
+        toggleTheme: () => {
+            isDayMode = !isDayMode;
+            document.body.classList.toggle('light-theme', isDayMode);
+            const icon = document.getElementById('theme-icon'); const text = document.getElementById('theme-text');
+            if(isDayMode) { icon.className = 'fas fa-moon'; text.innerText = LANG[currentLang].night_mode; } 
+            else { icon.className = 'fas fa-sun'; text.innerText = LANG[currentLang].day_mode; }
+            if(scene) {
+                scene.background = new THREE.Color(isDayMode ? 0xd4d4d8 : 0x1e1e21);
+                app.updateGridConfig(); 
+            }
+            // Redraw section preview immediately to match new theme colors
+            if(selectedObj) {
+                // We use the userData stored data to redraw correctly
+                SectionDrawer.draw({
+                    type: selectedObj.userData.type,
+                    size: selectedObj.userData.pSize || selectedObj.userData.fSize || selectedObj.userData.cW,
+                    len: selectedObj.userData.fLen || selectedObj.userData.cLen || selectedObj.userData.pLen,
+                    w: selectedObj.userData.cW, h: selectedObj.userData.cH, t: selectedObj.userData.cT
+                });
+            }
+        },
+
+        toggleLanguage: () => {
+            currentLang = currentLang === 'es' ? 'en' : 'es';
+            document.getElementById('lang-ind').innerText = currentLang.toUpperCase();
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if(LANG[currentLang][key]) el.innerText = LANG[currentLang][key];
+            });
+            ui.toast(currentLang==='es' ? "Idioma: Español" : "Language: English");
+        },
+
+        quickProfile: (type) => {
+            const select = document.getElementById('create-type'); if(select) select.value = type;
+            if(window.app && window.app.createProfileDefault) { window.app.createProfileDefault(); ui.toast('Creando ' + type); }
+        },
+
+        populateInspector: (o) => {
+            document.getElementById('obj-id').innerText = 'ID: ' + o.id;
+            const t = o.userData.type;
+            
+            document.getElementById('editor-profile').style.display = (t==='PROFILE') ? 'block' : 'none';
+            document.getElementById('editor-component').style.display = (['PLATE','BASE_PLATE','GUSSET_SQR','GUSSET_TRI','SUPPORT_ANGLE','ANCHOR'].includes(t)) ? 'block' : 'none';
+            document.getElementById('editor-fastener').style.display = (['BOLT','NUT','WASHER'].includes(t)) ? 'block' : 'none';
+            
+            let techName = "Elemento Genérico"; 
+            
+            // --- DRAW SECTION LOGIC ---
+            // We pass a data object to SectionDrawer.draw()
+            let drawData = { type: t };
+
+            if(t==='PROFILE') { 
+                document.getElementById('edit-type').value=o.userData.pType; 
+                ui.fillSizes('edit', o.userData.pType); 
+                document.getElementById('edit-size').value=o.userData.pSize; 
+                document.getElementById('edit-len').value=o.userData.pLen;
+                techName = `${o.userData.pType} ${o.userData.pSize}`;
+                
+                const props = app.calculateProfileProps(o.userData.pType, o.userData.pSize, o.userData.pLen);
+                document.getElementById('tech-weight').value = props.weight;
+                document.getElementById('tech-area').value = props.area;
+                document.getElementById('tech-tw').value = props.tw;
+                document.getElementById('tech-tf').value = props.tf;
+
+                drawData.size = o.userData.pSize;
+                drawData.type = o.userData.pType; // Override type for specific profile shape
+            }
+            else { 
+                document.getElementById('tech-weight').value = "0.00"; 
+                document.getElementById('tech-area').value = "--";
+                document.getElementById('tech-tw').value = "--";
+                document.getElementById('tech-tf').value = "--";
+            }
+
+            if(t==='ANCHOR') { 
+                document.getElementById('comp-w').value=o.userData.cDiam/1000; document.getElementById('comp-h').value=o.userData.cLen/1000; techName = "Perno Anclaje";
+                drawData.len = o.userData.cLen;
+            } else if(document.getElementById('editor-component').style.display==='block') { 
+                document.getElementById('comp-w').value=o.userData.cW; document.getElementById('comp-h').value=o.userData.cH; document.getElementById('comp-t').value=o.userData.cT; techName = "Placa / Conexión";
+                drawData.w = o.userData.cW; drawData.h = o.userData.cH; drawData.t = o.userData.cT;
+            }
+            if(['BOLT','NUT','WASHER'].includes(t)) { 
+                document.getElementById('fast-size').value=o.userData.fSize; 
+                document.getElementById('fast-len-container').style.display=(t==='BOLT'?'block':'none'); 
+                if(t==='BOLT') document.getElementById('fast-len').value=o.userData.fLen;
+                techName = `DIN 931 M${o.userData.fSize}`;
+                
+                drawData.size = o.userData.fSize;
+                drawData.len = o.userData.fLen;
+            }
+            if(t==='WELD') techName = "Cordón Soldadura";
+
+            document.getElementById('tech-name').value = techName; 
+            
+            // Execute Drawing
+            SectionDrawer.draw(drawData);
+
+            ui.updateCoords();
+        },
+        updateCoords: () => {
+            if(selectedObj) {
+                document.getElementById('inp-x').value = selectedObj.position.x.toFixed(2);
+                document.getElementById('inp-y').value = selectedObj.position.y.toFixed(2);
+                document.getElementById('inp-z').value = selectedObj.position.z.toFixed(2);
+                document.getElementById('inp-rx').value = Math.round(THREE.MathUtils.radToDeg(selectedObj.rotation.x));
+                document.getElementById('inp-ry').value = Math.round(THREE.MathUtils.radToDeg(selectedObj.rotation.y));
+                document.getElementById('inp-rz').value = Math.round(THREE.MathUtils.radToDeg(selectedObj.rotation.z));
+            }
+        },
+        updateLabels: () => {
+            const cont = document.getElementById('labels-container'); Array.from(cont.children).forEach(c => { if(c.classList.contains('label-3d')) c.remove(); });
+            if(!selectedObj) return;
+            const box = new THREE.Box3().setFromObject(selectedObj); const c = new THREE.Vector3(); box.getCenter(c);
+            const pos = c.clone().project(camera); if(Math.abs(pos.z) > 1) return;
+            const div = document.createElement('div'); div.className = 'label-3d'; div.innerText = selectedObj.userData.name || selectedObj.userData.type;
+            div.style.left = ((pos.x*.5+.5)*cont.clientWidth)+'px'; div.style.top = ((pos.y*-.5+.5)*cont.clientHeight)+'px';
+            cont.appendChild(div);
+        },
+        createMeasureLabel: (p1, p2, distCm) => {
+            const mid = p1.clone().add(p2).multiplyScalar(0.5);
+            const div = document.createElement('div'); div.className = 'measure-label'; div.innerText = distCm.toFixed(2) + ' cm';
+            div.dataset.x = mid.x; div.dataset.y = mid.y; div.dataset.z = mid.z;
+            document.getElementById('labels-container').appendChild(div); ui.updateMeasureLabels();
+        },
+        updateMeasureLabels: () => {
+            document.querySelectorAll('.measure-label').forEach(el => {
+                const pos = new THREE.Vector3(parseFloat(el.dataset.x), parseFloat(el.dataset.y), parseFloat(el.dataset.z)); pos.project(camera);
+                if(Math.abs(pos.z)>1) el.style.display='none';
+                else { el.style.display='block'; el.style.left = ((pos.x*.5+.5)*document.getElementById('canvas-container').clientWidth)+'px'; el.style.top = ((pos.y*-.5+.5)*document.getElementById('canvas-container').clientHeight)+'px'; }
+            });
+        },
+        removeLabel: () => { const cont = document.getElementById('labels-container'); Array.from(cont.children).forEach(c => { if(c.classList.contains('label-3d')) c.remove(); }); },
+        toast: (msg) => { const t = document.getElementById('toast'); t.innerHTML = msg; t.classList.add('visible'); setTimeout(() => t.classList.remove('visible'), 2000); }
+    };
+
+    function init() {
+        const c = document.getElementById('bg-canvas'); 
+        if (c) {
+            // Background canvas is no longer needed with static image background
+            c.style.display = 'none';
+        }
+
+        // Initialize App Logic
+        app.loadProjectsList();
+
+        const container = document.getElementById('canvas-container');
+        scene = new THREE.Scene(); scene.background = new THREE.Color(0x1e1e21);
+        
+        ambLight = new THREE.AmbientLight(0xffffff, 0.5); scene.add(ambLight);
+        hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6); hemiLight.position.set(0, 20, 0); scene.add(hemiLight);
+        dirLight = new THREE.DirectionalLight(0xffffff, 1.5); dirLight.position.set(5, 10, 7); dirLight.castShadow = true; 
+        dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048; scene.add(dirLight);
+
+        mainCamera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 0.1, 1000);
+        mainCamera.position.set(4, 4, 4); camera = mainCamera;
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, logarithmicDepthBuffer: true });
+        renderer.setSize(container.clientWidth, container.clientHeight); renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        controls = new OrbitControls(camera, renderer.domElement); 
+        controls.enableDamping = true; controls.dampingFactor = 0.1; 
+        controls.zoomSpeed = 3.0; // FASTER ZOOM
+        controls.rotateSpeed = 0.8; controls.panSpeed = 1.0;
+
+        gizmo = new TransformControls(camera, renderer.domElement);
+        gizmo.setTranslationSnap(0.01); gizmo.setRotationSnap(THREE.MathUtils.degToRad(15));
+        gizmo.addEventListener('dragging-changed', (e) => controls.enabled = !e.value);
+        gizmo.addEventListener('change', () => { ui.updateCoords(); ui.updateLabels(); });
+        scene.add(gizmo);
+
+        window.addEventListener('resize', onResize);
+        renderer.domElement.addEventListener('pointerdown', onPointerDown);
+        renderer.domElement.addEventListener('pointermove', onPointerMove);
+        controls.addEventListener('change', () => { ui.updateLabels(); ui.updateMeasureLabels(); });
+
+        ui.populateSizesDropdown();
+        SectionDrawer.init();
+        animate();
+    }
+
+    function onResize() { 
+        const c = document.getElementById('canvas-container'); 
+        if(camera.isPerspectiveCamera) camera.aspect = c.clientWidth/c.clientHeight; 
+        else { const a = c.clientWidth/c.clientHeight; camera.left=-5*a; camera.right=5*a; camera.top=5; camera.bottom=-5; }
+        camera.updateProjectionMatrix(); renderer.setSize(c.clientWidth, c.clientHeight); 
+    }
+    
+    function onPointerDown(e) { 
+        if(gizmo.dragging) return;
+        const r = renderer.domElement.getBoundingClientRect();
+        const m = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+        const ray = new THREE.Raycaster(); ray.setFromCamera(m, camera);
+        
+        if(app.mode === 'weld') {
+             const snap = app.getSnapPoint(ray);
+             if(snap) app.handleWeldClick(snap);
+             return;
+        }
+
+        if(app.mode === 'measure') {
+            const snap = app.getSnapPoint(ray);
+            if(snap) app.handleMeasureClick(snap);
+            return;
+        }
+
+        const hits = ray.intersectObjects(objects, true);
+        if(hits.length > 0) { let t = hits[0].object; while(t.parent && t.parent.type!=='Scene') t = t.parent; app.select(t); } 
+        else { app.select(null); } 
+    }
+
+    function onPointerMove(e) {
+        if(app.mode === 'measure' || app.mode === 'weld') {
+            const r = renderer.domElement.getBoundingClientRect();
+            const m = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+            const ray = new THREE.Raycaster(); ray.setFromCamera(m, camera);
+            const snap = app.getSnapPoint(ray);
+            app.updateSnapMarker(snap);
+
+            if(app.mode === 'measure' && app.measureState.step === 1 && app.measureState.tempLine && snap) {
+                const positions = app.measureState.tempLine.geometry.attributes.position;
+                positions.setXYZ(1, snap.pos.x, snap.pos.y, snap.pos.z); positions.needsUpdate = true;
+            }
+        } else {
+            app.updateSnapMarker(null);
+        }
+    }
+
+    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); ui.updateLabels(); ui.updateMeasureLabels(); }
+
+    window.app = app; window.ui = ui; window.onload = init;
+</script>
+</body>
+</html>
